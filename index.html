@@ -299,6 +299,7 @@
     <button class="btn btn-ghost btn-icon" id="redoBtn" onclick="App.redo()" title="Повторить (Ctrl+Y)">↪</button>
     <button class="btn btn-ghost" onclick="App.resetCamera()">🎯 Сброс</button>
     <button class="btn btn-ghost" onclick="App.toggleWireframe()">🔲 Каркас</button>
+    <button class="btn btn-ghost" onclick="App.randomizeLamp()">🎲 Случайно</button>
     <button class="btn btn-primary btn-large" onclick="App.exportSTL()">📦 Скачать STL</button>
   </div>
 </div>
@@ -1786,6 +1787,49 @@ window.App = {
   },
 
   closeModal() { document.getElementById('modal-overlay').classList.remove('show'); },
+  
+  randomizeLamp() {
+    saveState();
+    const presets = ['cylinder', 'tapered', 'dome', 'drum', 'bell', 'empire', 'coolie'];
+    const holeTypes = ['circle', 'square', 'diamond', 'star5', 'star6', 'star8', 'hexagon', 'cross', 'heart', 'moon', 'flower', 'triangle'];
+    
+    S.preset = presets[Math.floor(Math.random() * presets.length)];
+    S.height = Math.floor(150 + Math.random() * 150);
+    S.topRadius = Math.floor(30 + Math.random() * 70);
+    S.bottomRadius = Math.floor(50 + Math.random() * 100);
+    S.midRadius = Math.floor(60 + Math.random() * 100);
+    S.wallThickness = (1.0 + Math.random() * 0.8).toFixed(1);
+    S.holeType = holeTypes[Math.floor(Math.random() * holeTypes.length)];
+    S.holeSize = (3 + Math.random() * 4).toFixed(1);
+    S.holeSpacing = Math.floor(8 + Math.random() * 12);
+    S.stagger = Math.floor(20 + Math.random() * 60);
+    S.zoneTop = Math.floor(5 + Math.random() * 20);
+    S.zoneBottom = Math.floor(70 + Math.random() * 25);
+    S.gradientDensity = Math.random() > 0.3;
+    S.openBottom = true;
+    S.flatTop = Math.random() > 0.7;
+    S.bottomRim = Math.random() > 0.8;
+    
+    // Random hole bands (0-3 bands)
+    S.holeBands = [];
+    const numBands = Math.floor(Math.random() * 4);
+    for (let i = 0; i < numBands; i++) {
+      S.holeBands.push({
+        position: Math.floor(20 + Math.random() * 60),
+        type: holeTypes[Math.floor(Math.random() * holeTypes.length)],
+        size: (3 + Math.random() * 3).toFixed(1),
+        density: Math.floor(30 + Math.random() * 60)
+      });
+    }
+    
+    syncAll();
+    build();
+    this.resetCamera();
+    
+    const names = { cylinder:'Цилиндр', tapered:'Конус', dome:'Полусфера', drum:'Барабан', bell:'Колокол', empire:'Империя', coolie:'Кули' };
+    showNotification(`Случайная лампа: ${names[S.preset]}`);
+  },
+  
   undo, redo,
 };
 
