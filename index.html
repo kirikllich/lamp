@@ -1,1 +1,1839 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LampShade Studio — Проектировщик плафонов</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-tertiary: #1a1a2e;
+    --accent: #7c5cfc;
+    --accent-hover: #9478ff;
+    --accent-glow: rgba(124, 92, 252, 0.3);
+    --text-primary: #e8e8f0;
+    --text-secondary: #8888a8;
+    --text-muted: #555570;
+    --border: #2a2a40;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    user-select: none;
+  }
+
+  .header {
+    position: fixed; top: 0; left: 0; right: 0; height: 56px;
+    background: rgba(18, 18, 26, 0.95); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; z-index: 100; backdrop-filter: blur(20px);
+  }
+
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+
+  .header-actions { display: flex; gap: 6px; align-items: center; }
+
+  .btn {
+    padding: 7px 14px; border: none; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: var(--transition);
+    display: flex; align-items: center; gap: 5px; white-space: nowrap;
+  }
+  .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+  .btn-primary { background: var(--accent); color: white; box-shadow: 0 2px 12px var(--accent-glow); }
+  .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+  .btn-large { padding: 10px 20px; font-size: 13px; border-radius: var(--radius); }
+  .btn-icon { padding: 7px 10px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+  .layout { display: flex; height: calc(100vh - 56px); margin-top: 56px; }
+
+  .sidebar {
+    width: 310px; min-width: 310px;
+    background: var(--bg-secondary); border-right: 1px solid var(--border);
+    overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .panel { border-bottom: 1px solid var(--border); }
+  .panel-header {
+    padding: 12px 18px; display: flex; align-items: center;
+    justify-content: space-between; cursor: pointer; transition: background 0.2s;
+  }
+  .panel-header:hover { background: var(--bg-tertiary); }
+  .panel-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); }
+  .panel-toggle { color: var(--text-muted); transition: transform 0.3s; font-size: 11px; }
+  .panel.collapsed .panel-toggle { transform: rotate(-90deg); }
+  .panel.collapsed .panel-body { display: none; }
+  .panel-body { padding: 4px 18px 18px; }
+
+  .presets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .preset-card {
+    background: var(--bg-tertiary); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 8px; cursor: pointer;
+    transition: var(--transition); text-align: center;
+  }
+  .preset-card:hover { border-color: var(--accent); background: rgba(124, 92, 252, 0.08); transform: translateY(-1px); }
+  .preset-card.active { border-color: var(--accent); background: rgba(124, 92, 252, 0.15); box-shadow: 0 0 12px var(--accent-glow); }
+  .preset-icon { font-size: 22px; margin-bottom: 4px; }
+  .preset-name { font-size: 10px; font-weight: 600; color: var(--text-secondary); }
+
+  .control-group { margin-bottom: 14px; }
+  .control-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .control-label span { font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+  .control-value { font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(124,92,252,0.1); padding: 2px 7px; border-radius: 4px; min-width: 40px; text-align: center; }
+
+  input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 6px;
+    background: var(--bg-tertiary); border-radius: 3px; outline: none; border: 1px solid var(--border); cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    background: var(--accent); border-radius: 50%; cursor: pointer;
+    box-shadow: 0 2px 8px var(--accent-glow); transition: transform 0.15s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px; background: var(--accent);
+    border-radius: 50%; cursor: pointer; border: none; box-shadow: 0 2px 8px var(--accent-glow);
+  }
+
+  .viewport { flex: 1; position: relative; background: var(--bg-primary); overflow: hidden; }
+  .viewport canvas { display: block; width: 100%; height: 100%; }
+
+  .viewport-hint {
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: rgba(26, 26, 46, 0.9); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 8px 16px; font-size: 11px; color: var(--text-secondary);
+    backdrop-filter: blur(10px); display: flex; gap: 14px;
+  }
+  .viewport-hint span { display: flex; align-items: center; gap: 4px; }
+  .viewport-hint kbd {
+    background: var(--bg-tertiary); padding: 1px 5px; border-radius: 3px;
+    font-family: inherit; font-size: 10px; border: 1px solid var(--border);
+  }
+
+  .status-bar { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; z-index: 10; flex-wrap: wrap; }
+  .status-badge {
+    background: rgba(26, 26, 46, 0.9); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 5px 10px; font-size: 10px;
+    color: var(--text-secondary); backdrop-filter: blur(10px);
+  }
+
+  .toggle-group { display: flex; background: var(--bg-tertiary); border-radius: var(--radius-sm); border: 1px solid var(--border); overflow: hidden; }
+  .toggle-option {
+    flex: 1; padding: 6px 10px; text-align: center; font-size: 11px;
+    font-weight: 500; color: var(--text-secondary); cursor: pointer;
+    transition: var(--transition); border: none; background: transparent; font-family: inherit;
+  }
+  .toggle-option:hover { color: var(--text-primary); }
+  .toggle-option.active { background: var(--accent); color: white; }
+
+  .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; cursor: pointer; transition: var(--transition); }
+  .custom-checkbox {
+    width: 16px; height: 16px; border: 2px solid var(--border); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition); flex-shrink: 0; font-size: 10px; color: transparent;
+  }
+  .checkbox-group.checked .custom-checkbox { background: var(--accent); border-color: var(--accent); color: white; }
+  .checkbox-group span { font-size: 11px; color: var(--text-secondary); }
+
+  .section-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+  .notification {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--bg-tertiary); border: 1px solid var(--success);
+    border-radius: var(--radius); padding: 12px 18px; font-size: 12px; color: var(--success);
+    box-shadow: var(--shadow); transform: translateY(100px); opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 200; display: flex; align-items: center; gap: 8px;
+  }
+  .notification.show { transform: translateY(0); opacity: 1; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px); display: flex; align-items: center;
+    justify-content: center; z-index: 300; opacity: 0;
+    pointer-events: none; transition: opacity 0.3s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px; max-width: 460px;
+    width: 90%; box-shadow: var(--shadow); transform: scale(0.9); transition: transform 0.3s;
+  }
+  .modal-overlay.show .modal { transform: scale(1); }
+  .modal h2 { font-size: 16px; margin-bottom: 8px; }
+  .modal p { font-size: 12px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .info-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(42,42,64,0.5); }
+  .info-row:last-child { border: none; }
+  .info-label { font-size: 11px; color: var(--text-muted); }
+  .info-value { font-size: 11px; font-weight: 600; color: var(--text-primary); }
+
+  .export-section { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+
+  .undo-redo-bar { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; z-index: 10; }
+  .undo-redo-bar .btn { background: rgba(26, 26, 46, 0.9); border: 1px solid var(--border); color: var(--text-secondary); backdrop-filter: blur(10px); padding: 6px 8px; }
+  .fit-view-btn { position: absolute; top: 12px; right: 140px; z-index: 10; }
+  .fit-view-btn .btn { background: rgba(26, 26, 46, 0.9); border: 1px solid var(--border); color: var(--text-secondary); backdrop-filter: blur(10px); padding: 6px 10px; }
+
+  #hiddenFileInput { display: none; }
+
+  .profile-canvas-wrapper {
+    background: var(--bg-tertiary); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px; margin-bottom: 12px;
+  }
+  #profileCanvas { width: 100%; height: 100px; display: block; border-radius: 4px; }
+
+  .profile-points { display: flex; gap: 4px; margin-bottom: 10px; }
+  .profile-point { flex: 1; text-align: center; }
+  .profile-point label { font-size: 8px; color: var(--text-muted); display: block; margin-bottom: 3px; }
+  .profile-point input {
+    width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text-primary); font-family: inherit;
+    font-size: 11px; padding: 4px; text-align: center; outline: none; transition: var(--transition);
+  }
+  .profile-point input:focus { border-color: var(--accent); }
+  .add-remove-row { display: flex; gap: 4px; margin-top: 6px; }
+  .add-remove-row .btn { flex: 1; justify-content: center; padding: 5px; font-size: 11px; }
+
+  /* Hole Pattern Grid */
+  .pattern-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+  .pattern-card {
+    background: var(--bg-tertiary); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 6px; cursor: pointer;
+    transition: var(--transition); text-align: center;
+  }
+  .pattern-card:hover { border-color: var(--accent); background: rgba(124, 92, 252, 0.08); }
+  .pattern-card.active { border-color: var(--accent); background: rgba(124, 92, 252, 0.15); box-shadow: 0 0 12px var(--accent-glow); }
+  .pattern-card-icon { font-size: 20px; margin-bottom: 2px; }
+  .pattern-card-name { font-size: 9px; font-weight: 600; color: var(--text-secondary); }
+
+  /* Pattern Preview */
+  .pattern-preview {
+    background: var(--bg-tertiary); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px; margin-bottom: 12px;
+  }
+  #patternCanvas { width: 100%; height: 130px; display: block; border-radius: 4px; }
+  .pattern-info-text { font-size: 10px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }
+
+  /* Hole Bands */
+  .hole-bands-container { margin-bottom: 10px; }
+  .hole-band {
+    background: var(--bg-tertiary); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px; margin-bottom: 8px;
+  }
+  .band-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .band-title { font-size: 11px; font-weight: 600; color: var(--text-primary); }
+  .band-remove { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 14px; padding: 0 4px; }
+  .band-remove:hover { color: #ff4444; }
+
+  .band-pattern-select { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+  .band-pattern-btn {
+    width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg-secondary); cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 16px;
+    transition: var(--transition); color: var(--text-secondary);
+  }
+  .band-pattern-btn:hover { border-color: var(--accent); }
+  .band-pattern-btn.active { border-color: var(--accent); background: rgba(124, 92, 252, 0.15); }
+
+  .material-presets { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+  .material-card {
+    background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 6px; cursor: pointer; transition: var(--transition); text-align: center;
+  }
+  .material-card:hover { border-color: var(--accent); }
+  .material-card.active { border-color: var(--accent); background: rgba(124, 92, 252, 0.12); }
+  .material-name { font-size: 10px; font-weight: 600; color: var(--text-primary); }
+  .material-detail { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+
+  .color-picker-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .color-swatch {
+    width: 30px; height: 30px; border-radius: 6px; border: 2px solid var(--border);
+    cursor: pointer; transition: var(--transition); overflow: hidden; position: relative; flex-shrink: 0;
+  }
+  .color-swatch:hover { border-color: var(--accent); transform: scale(1.1); }
+  .color-swatch.selected { border-color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+  .color-swatch input[type="color"] { position: absolute; top: -10px; left: -10px; width: 50px; height: 50px; opacity: 0; cursor: pointer; }
+
+  .save-load-row { display: flex; gap: 6px; margin-top: 12px; }
+  .save-load-row .btn { flex: 1; justify-content: center; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">💡</div>
+    <span>LampShade Studio</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-icon" id="undoBtn" onclick="App.undo()" title="Отменить (Ctrl+Z)">↩</button>
+    <button class="btn btn-ghost btn-icon" id="redoBtn" onclick="App.redo()" title="Повторить (Ctrl+Y)">↪</button>
+    <button class="btn btn-ghost" onclick="App.resetCamera()">🎯 Сброс</button>
+    <button class="btn btn-ghost" onclick="App.toggleWireframe()">🔲 Каркас</button>
+    <button class="btn btn-primary btn-large" onclick="App.exportSTL()">📦 Скачать STL</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+
+    <!-- Форма -->
+    <div class="panel" id="panel-presets">
+      <div class="panel-header" onclick="App.togglePanel('panel-presets')">
+        <span class="panel-title">Форма плафона</span>
+        <span class="panel-toggle">▼</span>
+      </div>
+      <div class="panel-body">
+        <div class="presets-grid">
+          <div class="preset-card active" onclick="App.selectPreset('cylinder', this)"><div class="preset-icon">⬜</div><div class="preset-name">Цилиндр</div></div>
+          <div class="preset-card" onclick="App.selectPreset('tapered', this)"><div class="preset-icon">🔺</div><div class="preset-name">Конус</div></div>
+          <div class="preset-card" onclick="App.selectPreset('dome', this)"><div class="preset-icon">🌙</div><div class="preset-name">Полусфера</div></div>
+          <div class="preset-card" onclick="App.selectPreset('drum', this)"><div class="preset-icon">🥁</div><div class="preset-name">Барабан</div></div>
+          <div class="preset-card" onclick="App.selectPreset('bell', this)"><div class="preset-icon">🔔</div><div class="preset-name">Колокол</div></div>
+          <div class="preset-card" onclick="App.selectPreset('empire', this)"><div class="preset-icon">👑</div><div class="preset-name">Империя</div></div>
+          <div class="preset-card" onclick="App.selectPreset('coolie', this)"><div class="preset-icon">🎩</div><div class="preset-name">Кули</div></div>
+          <div class="preset-card" onclick="App.selectPreset('custom', this)"><div class="preset-icon">✏️</div><div class="preset-name">Своя форма</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Размеры -->
+    <div class="panel" id="panel-dimensions">
+      <div class="panel-header" onclick="App.togglePanel('panel-dimensions')">
+        <span class="panel-title">Размеры (мм)</span>
+        <span class="panel-toggle">▼</span>
+      </div>
+      <div class="panel-body">
+        <div class="control-group"><div class="control-label"><span>Высота</span><span class="control-value" id="val-height">200</span></div><input type="range" id="slider-height" min="50" max="500" value="200" step="5"></div>
+        <div class="control-group"><div class="control-label"><span>Верхний радиус</span><span class="control-value" id="val-topRadius">50</span></div><input type="range" id="slider-topRadius" min="10" max="200" value="50" step="5"></div>
+        <div class="control-group"><div class="control-label"><span>Нижний радиус</span><span class="control-value" id="val-bottomRadius">100</span></div><input type="range" id="slider-bottomRadius" min="10" max="200" value="100" step="5"></div>
+        <div class="control-group" id="group-midRadius" style="display:none;"><div class="control-label"><span>Средний радиус</span><span class="control-value" id="val-midRadius">120</span></div><input type="range" id="slider-midRadius" min="10" max="200" value="120" step="5"></div>
+        <div class="control-group"><div class="control-label"><span>Сегменты</span><span class="control-value" id="val-segments">64</span></div><input type="range" id="slider-segments" min="12" max="128" value="64" step="4"></div>
+      </div>
+    </div>
+
+    <!-- Узоры отверстий -->
+    <div class="panel" id="panel-patterns">
+      <div class="panel-header" onclick="App.togglePanel('panel-patterns')">
+        <span class="panel-title">Узоры отверстий</span>
+        <span class="panel-toggle">▼</span>
+      </div>
+      <div class="panel-body">
+        <div class="section-label">Тип отверстия</div>
+        <div class="pattern-grid">
+          <div class="pattern-card active" onclick="App.setHoleType('circle', this)">
+            <div class="pattern-card-icon">⭕</div><div class="pattern-card-name">Круг</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('square', this)">
+            <div class="pattern-card-icon">⬜</div><div class="pattern-card-name">Квадрат</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('diamond', this)">
+            <div class="pattern-card-icon">🔷</div><div class="pattern-card-name">Ромб</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('star5', this)">
+            <div class="pattern-card-icon">⭐</div><div class="pattern-card-name">Звезда 5</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('star6', this)">
+            <div class="pattern-card-icon">✡</div><div class="pattern-card-name">Звезда 6</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('star8', this)">
+            <div class="pattern-card-icon">✦</div><div class="pattern-card-name">Звезда 8</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('hexagon', this)">
+            <div class="pattern-card-icon">⬡</div><div class="pattern-card-name">Шестиугольник</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('cross', this)">
+            <div class="pattern-card-icon">✚</div><div class="pattern-card-name">Крест</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('heart', this)">
+            <div class="pattern-card-icon">♥</div><div class="pattern-card-name">Сердце</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('moon', this)">
+            <div class="pattern-card-icon">🌙</div><div class="pattern-card-name">Луна</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('flower', this)">
+            <div class="pattern-card-icon">✿</div><div class="pattern-card-name">Цветок</div>
+          </div>
+          <div class="pattern-card" onclick="App.setHoleType('triangle', this)">
+            <div class="pattern-card-icon">△</div><div class="pattern-card-name">Треугольник</div>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="pattern-preview">
+          <canvas id="patternCanvas"></canvas>
+          <div class="pattern-info-text" id="patternInfoText">Предпросмотр узора</div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Размер отверстия</span><span class="control-value" id="val-holeSize">4</span></div>
+          <input type="range" id="slider-holeSize" min="2" max="12" value="4" step="0.5">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Расстояние между отв.</span><span class="control-value" id="val-holeSpacing">10</span></div>
+          <input type="range" id="slider-holeSpacing" min="6" max="25" value="10" step="1">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Смещение рядов</span><span class="control-value" id="val-stagger">50</span></div>
+          <input type="range" id="slider-stagger" min="0" max="100" value="50" step="5">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Зона сверху (%)</span><span class="control-value" id="val-zoneTop">10</span></div>
+          <input type="range" id="slider-zoneTop" min="0" max="100" value="10" step="5">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Зона снизу (%)</span><span class="control-value" id="val-zoneBottom">90</span></div>
+          <input type="range" id="slider-zoneBottom" min="0" max="100" value="90" step="5">
+        </div>
+        <div class="checkbox-group checked" onclick="App.toggleCheckbox(this, 'gradientDensity')">
+          <div class="custom-checkbox">✓</div><span>Градиент (больше в центре)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Полосы узоров -->
+    <div class="panel" id="panel-bands">
+      <div class="panel-header" onclick="App.togglePanel('panel-bands')">
+        <span class="panel-title">Декоративные полосы</span>
+        <span class="panel-toggle">▼</span>
+      </div>
+      <div class="panel-body">
+        <p style="font-size:10px;color:var(--text-muted);margin-bottom:10px;">
+          Добавьте декоративные полосы с другими узорами на определённой высоте.
+        </p>
+        <div class="hole-bands-container" id="holeBandsContainer"></div>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;" onclick="App.addHoleBand()">
+          + Добавить полосу
+        </button>
+      </div>
+    </div>
+
+    <!-- Стенки -->
+    <div class="panel" id="panel-wall">
+      <div class="panel-header" onclick="App.togglePanel('panel-wall')">
+        <span class="panel-title">Стенки</span>
+        <span class="panel-toggle">▼</span>
+      </div>
+      <div class="panel-body">
+        <div class="control-group">
+          <div class="control-label"><span>Толщина стенки</span><span class="control-value" id="val-wallThickness">1.2</span></div>
+          <input type="range" id="slider-wallThickness" min="0.4" max="5" value="1.2" step="0.2">
+        </div>
+        <div class="control-group">
+          <div class="section-label">Материал</div>
+          <div class="material-presets">
+            <div class="material-card active" onclick="App.applyMaterialPreset('pla', this)" id="mat-pla"><div class="material-name">PLA</div><div class="material-detail">1.2 мм</div></div>
+            <div class="material-card" onclick="App.applyMaterialPreset('petg', this)" id="mat-petg"><div class="material-name">PETG</div><div class="material-detail">1.0 мм</div></div>
+            <div class="material-card" onclick="App.applyMaterialPreset('abs', this)" id="mat-abs"><div class="material-name">ABS</div><div class="material-detail">1.5 мм</div></div>
+          </div>
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Верхнее отверстие</span><span class="control-value" id="val-topOpening">30</span></div>
+          <input type="range" id="slider-topOpening" min="0" max="100" value="30" step="5">
+        </div>
+        <div class="checkbox-group checked" onclick="App.toggleCheckbox(this, 'openBottom')"><div class="custom-checkbox">✓</div><span>Открытый низ</span></div>
+        <div class="checkbox-group" onclick="App.toggleCheckbox(this, 'flatTop')"><div class="custom-checkbox"></div><span>Плоский верх</span></div>
+        <div class="checkbox-group" onclick="App.toggleCheckbox(this, 'bottomRim')"><div class="custom-checkbox"></div><span>Ободок снизу</span></div>
+      </div>
+    </div>
+
+    <!-- Профиль -->
+    <div class="panel collapsed" id="panel-profile">
+      <div class="panel-header" onclick="App.togglePanel('panel-profile')">
+        <span class="panel-title">Профиль сечения</span>
+        <span class="panel-toggle">▼</span>
+      </div>
+      <div class="panel-body">
+        <p style="font-size:10px;color:var(--text-muted);margin-bottom:10px;">Радиусы на разных высотах</p>
+        <div class="profile-canvas-wrapper"><canvas id="profileCanvas"></canvas></div>
+        <div class="profile-points" id="profilePointsContainer"></div>
+        <div class="add-remove-row">
+          <button class="btn btn-ghost" onclick="App.addProfilePoint()">+ Точка</button>
+          <button class="btn btn-ghost" onclick="App.removeProfilePoint()">− Точка</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Внешний вид -->
+    <div class="panel" id="panel-appearance">
+      <div class="panel-header" onclick="App.togglePanel('panel-appearance')">
+        <span class="panel-title">Внешний вид</span>
+        <span class="panel-toggle">▼</span>
+      </div>
+      <div class="panel-body">
+        <div class="control-group">
+          <div class="control-label"><span>Цвет</span></div>
+          <div class="color-picker-group">
+            <div class="color-swatch selected" style="background:#e8e8e8" onclick="App.setColor('#e8e8e8', this)"><input type="color" value="#e8e8e8"></div>
+            <div class="color-swatch" style="background:#f5f5dc" onclick="App.setColor('#f5f5dc', this)"></div>
+            <div class="color-swatch" style="background:#2a2a2a" onclick="App.setColor('#2a2a2a', this)"></div>
+            <div class="color-swatch" style="background:#d4a574" onclick="App.setColor('#d4a574', this)"></div>
+            <div class="color-swatch" style="background:#c9b1ff" onclick="App.setColor('#c9b1ff', this)"></div>
+            <div class="color-swatch" style="background:#ff6b6b" onclick="App.setColor('#ff6b6b', this)"></div>
+          </div>
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Режим</span></div>
+          <div class="toggle-group">
+            <button class="toggle-option active" onclick="App.setDisplayMode('solid', this)">Модель</button>
+            <button class="toggle-option" onclick="App.setDisplayMode('wireframe', this)">Каркас</button>
+            <button class="toggle-option" onclick="App.setDisplayMode('both', this)">Оба</button>
+          </div>
+        </div>
+        <div class="checkbox-group checked" onclick="App.toggleCheckbox(this, 'showGrid')"><div class="custom-checkbox">✓</div><span>Сетка</span></div>
+        <div class="checkbox-group checked" onclick="App.toggleCheckbox(this, 'showAxis')"><div class="custom-checkbox">✓</div><span>Оси</span></div>
+      </div>
+    </div>
+
+    <!-- Информация -->
+    <div class="panel" id="panel-info">
+      <div class="panel-header" onclick="App.togglePanel('panel-info')">
+        <span class="panel-title">Информация</span>
+        <span class="panel-toggle">▼</span>
+      </div>
+      <div class="panel-body">
+        <div class="info-row"><span class="info-label">Объём</span><span class="info-value" id="info-volume">—</span></div>
+        <div class="info-row"><span class="info-label">Площадь</span><span class="info-value" id="info-surface">—</span></div>
+        <div class="info-row"><span class="info-label">Вес (PLA)</span><span class="info-value" id="info-weight">—</span></div>
+        <div class="info-row"><span class="info-label">Время печати</span><span class="info-value" id="info-time">—</span></div>
+        <div class="info-row"><span class="info-label">Отверстий</span><span class="info-value" id="info-holes">—</span></div>
+        <div class="info-row"><span class="info-label">Поддержки</span><span class="info-value" id="info-support">—</span></div>
+      </div>
+    </div>
+
+    <!-- Проект -->
+    <div class="panel" id="panel-project">
+      <div class="panel-header" onclick="App.togglePanel('panel-project')">
+        <span class="panel-title">Проект</span>
+        <span class="panel-toggle">▼</span>
+      </div>
+      <div class="panel-body">
+        <div class="save-load-row">
+          <button class="btn btn-success" onclick="App.saveProject()" style="flex:1;justify-content:center;">💾 Сохранить</button>
+          <button class="btn btn-ghost" onclick="App.loadProject()" style="flex:1;justify-content:center;">📂 Загрузить</button>
+        </div>
+        <button class="btn btn-danger" onclick="App.resetAll()" style="width:100%;justify-content:center;margin-top:6px;">🗑 Сбросить</button>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="export-section">
+      <button class="btn btn-primary btn-large" onclick="App.exportSTL()" style="justify-content:center;">📦 Скачать STL</button>
+      <button class="btn btn-ghost" onclick="App.exportOBJ()" style="justify-content:center;">📐 Скачать OBJ</button>
+    </div>
+  </div>
+
+  <div class="viewport" id="viewport">
+    <div class="undo-redo-bar">
+      <button class="btn btn-icon" id="undoBtn2" onclick="App.undo()" title="Ctrl+Z">↩</button>
+      <button class="btn btn-icon" id="redoBtn2" onclick="App.redo()" title="Ctrl+Y">↪</button>
+    </div>
+    <div class="fit-view-btn">
+      <button class="btn" onclick="App.fitToView()" title="Вписать">⊞ Вписать</button>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-badge" id="status-shape">Цилиндр</div>
+      <div class="status-badge" id="status-dimensions">200 × 100 × 100 мм</div>
+      <div class="status-badge" id="status-holes">0 отверстий</div>
+    </div>
+    <div class="viewport-hint">
+      <span><kbd>ЛКМ</kbd> Вращение</span>
+      <span><kbd>ПКМ</kbd> Перемещение</span>
+      <span><kbd>Колесо</kbd> Масштаб</span>
+    </div>
+  </div>
+</div>
+
+<div class="notification" id="notification">
+  <span>✓</span>
+  <span id="notification-text"></span>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="App.closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>🎉 Модель готова!</h2>
+    <p id="modal-body"></p>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="App.closeModal()">Отлично!</button></div>
+  </div>
+</div>
+
+<input type="file" id="hiddenFileInput" accept=".json">
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ==================== STATE ====================
+const S = {
+  preset: 'cylinder',
+  height: 200, topRadius: 50, bottomRadius: 100, midRadius: 120,
+  segments: 64, wallThickness: 1.2, topOpening: 30,
+  openBottom: true, flatTop: false, bottomRim: false,
+  color: '#e8e8e8', displayMode: 'solid', showGrid: true, showAxis: true,
+  profile: [50, 75, 100, 90, 80],
+  // Hole pattern
+  holeType: 'circle',
+  holeSize: 4,
+  holeSpacing: 10,
+  stagger: 50,
+  zoneTop: 10,
+  zoneBottom: 90,
+  gradientDensity: true,
+  holeBands: []
+};
+
+// ==================== UNDO/REDO ====================
+const hist = [], future = [];
+function saveState() {
+  hist.push(JSON.stringify(S));
+  if (hist.length > 30) hist.shift();
+  future.length = 0;
+  updateUndoRedo();
+}
+function undo() {
+  if (hist.length < 2) return;
+  future.push(hist.pop());
+  Object.assign(S, JSON.parse(hist[hist.length - 1]));
+  syncAll();
+  build();
+  showNotification('Отменено');
+}
+function redo() {
+  if (future.length === 0) return;
+  hist.push(future.pop());
+  Object.assign(S, JSON.parse(hist[hist.length - 1]));
+  syncAll();
+  build();
+  showNotification('Повторено');
+}
+function updateUndoRedo() {
+  const d = hist.length < 2, r = future.length === 0;
+  ['undoBtn','undoBtn2'].forEach(id => { const el = document.getElementById(id); if(el) el.disabled = d; });
+  ['redoBtn','redoBtn2'].forEach(id => { const el = document.getElementById(id); if(el) el.disabled = r; });
+}
+
+// ==================== THREE SETUP ====================
+const viewport = document.getElementById('viewport');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0f);
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.001);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
+camera.position.set(300, 250, 300);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+viewport.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set(0, S.height / 2, 0);
+controls.minDistance = 50;
+controls.maxDistance = 1500;
+
+scene.add(new THREE.AmbientLight(0x404060, 0.6));
+const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+mainLight.position.set(200, 400, 200);
+mainLight.castShadow = true;
+mainLight.shadow.mapSize.set(2048, 2048);
+mainLight.shadow.camera.near = 10;
+mainLight.shadow.camera.far = 1000;
+mainLight.shadow.camera.left = -300;
+mainLight.shadow.camera.right = 300;
+mainLight.shadow.camera.top = 300;
+mainLight.shadow.camera.bottom = -300;
+scene.add(mainLight);
+const fillLight = new THREE.DirectionalLight(0x7c5cfc, 0.3);
+fillLight.position.set(-200, 100, -200);
+scene.add(fillLight);
+const rimLight = new THREE.DirectionalLight(0xffaa44, 0.4);
+rimLight.position.set(0, 50, -300);
+scene.add(rimLight);
+const pointLight = new THREE.PointLight(0xffdd88, 0.8, 500);
+pointLight.position.set(0, S.height * 0.6, 0);
+scene.add(pointLight);
+
+const gridHelper = new THREE.GridHelper(600, 30, 0x2a2a40, 0x1a1a2e);
+scene.add(gridHelper);
+const axisHelper = new THREE.AxesHelper(100);
+scene.add(axisHelper);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000),
+  new THREE.MeshStandardMaterial({ color: 0x0a0a0f, roughness: 0.9, metalness: 0.1 }));
+ground.rotation.x = -Math.PI / 2; ground.position.y = -0.1;
+ground.receiveShadow = true; scene.add(ground);
+
+let shadeMesh = null, shadeWireframe = null;
+let shadeMaterial = new THREE.MeshStandardMaterial({
+  color: new THREE.Color(S.color), roughness: 0.3, metalness: 0.1,
+  side: THREE.DoubleSide, transparent: true, opacity: 0.85,
+});
+
+// ==================== PROFILE ====================
+function getProfileRadii() {
+  if (S.preset === 'custom') return [...S.profile];
+  const t = S.topRadius, b = S.bottomRadius;
+  switch (S.preset) {
+    case 'cylinder': case 'drum': return [t, t, b, b, b];
+    case 'tapered': return [0,1,2,3,4].map(i => t + (b - t) * i / 4);
+    case 'dome': { const m = Math.max(t, b); return [t, t + (m - t) * 0.6, m, m * 0.95, b]; }
+    case 'bell': return [t, t * 1.2, b * 0.9, b * 1.05, b];
+    case 'empire': return [t, b * 0.6, b * 0.8, b * 0.95, b];
+    case 'coolie': return [15, 40, 70, 90, b];
+    default: return [t, t, b, b, b];
+  }
+}
+
+// ==================== HOLE POINTS ====================
+function computeHolePoints() {
+  const points = [];
+  const radii = getProfileRadii();
+  const layers = radii.length;
+  const height = S.height;
+  const layerH = height / (layers - 1);
+  const holeSize = S.holeSize;
+  const spacing = S.holeSpacing;
+  const staggerFrac = S.stagger / 100;
+
+  const zMin = (S.zoneTop / 100) * height;
+  const zMax = (S.zoneBottom / 100) * height;
+  const avgR = (radii[0] + radii[layers - 1]) / 2;
+  const numCols = Math.floor(2 * Math.PI * avgR / spacing);
+  const numRows = Math.max(2, Math.floor((zMax - zMin) / (spacing * 0.8)));
+
+  for (let row = 0; row < numRows; row++) {
+    const z = zMin + row * spacing * 0.8 + (row % 2) * spacing * staggerFrac * 0.5;
+    const t = z / height;
+    const idx = t * (layers - 1);
+    const i0 = Math.floor(idx);
+    const i1 = Math.min(i0 + 1, layers - 1);
+    const frac = idx - i0;
+    const r = radii[i0] * (1 - frac) + radii[i1] * frac;
+
+    if (r < holeSize * 3) continue;
+
+    let density = 1;
+    if (S.gradientDensity) {
+      const midZ = (zMin + zMax) / 2;
+      const dist = Math.abs(z - midZ) / ((zMax - zMin) / 2);
+      density = 1 - dist * 0.5;
+    }
+
+    const cols = Math.max(3, Math.floor(2 * Math.PI * r / spacing));
+    for (let col = 0; col < cols; col++) {
+      const angleOffset = (row % 2) * (Math.PI / cols) * staggerFrac;
+      const angle = (col / cols) * Math.PI * 2 + angleOffset;
+      if (Math.random() > density) continue;
+
+      points.push({
+        x: Math.cos(angle) * r,
+        y: z,
+        z: Math.sin(angle) * r,
+        angle, r, type: S.holeType, size: holeSize
+      });
+    }
+  }
+
+  // Hole bands
+  for (const band of S.holeBands) {
+    const bandZ = (band.position / 100) * height;
+    const bandHalfH = 6;
+    const t = bandZ / height;
+    const idx = t * (layers - 1);
+    const i0 = Math.floor(idx);
+    const i1 = Math.min(i0 + 1, layers - 1);
+    const frac = idx - i0;
+    const r = radii[i0] * (1 - frac) + radii[i1] * frac;
+
+    if (r < band.size * 3) continue;
+
+    const cols = Math.max(3, Math.floor(2 * Math.PI * r / (band.size * 2.5)));
+    const rowsInBand = Math.floor(12 / (band.size * 0.9));
+
+    for (let row = 0; row < rowsInBand; row++) {
+      const z = bandZ - bandHalfH + row * band.size * 0.9;
+      const staggerOffset = (row % 2) * Math.PI / cols * staggerFrac;
+      for (let col = 0; col < cols; col++) {
+        if (Math.random() > (band.density / 100)) continue;
+        const angle = (col / cols) * Math.PI * 2 + staggerOffset;
+        points.push({
+          x: Math.cos(angle) * r,
+          y: z,
+          z: Math.sin(angle) * r,
+          angle, r, type: band.type, size: band.size, isBand: true
+        });
+      }
+    }
+  }
+
+  return points;
+}
+
+// ==================== HOLE SHAPE VERTICES ====================
+function getHoleVertices(type, size, numPoints = 24) {
+  const verts = [];
+
+  switch (type) {
+    case 'circle':
+      for (let i = 0; i < numPoints; i++) {
+        const a = (i / numPoints) * Math.PI * 2;
+        verts.push({ x: Math.cos(a) * size, y: Math.sin(a) * size });
+      }
+      break;
+
+    case 'square':
+      verts.push({ x: -size, y: -size });
+      verts.push({ x: size, y: -size });
+      verts.push({ x: size, y: size });
+      verts.push({ x: -size, y: size });
+      break;
+
+    case 'diamond':
+      verts.push({ x: 0, y: -size });
+      verts.push({ x: size, y: 0 });
+      verts.push({ x: 0, y: size });
+      verts.push({ x: -size, y: 0 });
+      break;
+
+    case 'triangle':
+      for (let i = 0; i < 3; i++) {
+        const a = (i / 3) * Math.PI * 2 - Math.PI / 2;
+        verts.push({ x: Math.cos(a) * size, y: Math.sin(a) * size });
+      }
+      break;
+
+    case 'cross':
+      const w = size * 0.35;
+      const h = size;
+      verts.push({ x: -w, y: -h });
+      verts.push({ x: w, y: -h });
+      verts.push({ x: w, y: -w });
+      verts.push({ x: h, y: -w });
+      verts.push({ x: h, y: w });
+      verts.push({ x: w, y: w });
+      verts.push({ x: w, y: h });
+      verts.push({ x: -w, y: h });
+      verts.push({ x: -w, y: w });
+      verts.push({ x: -h, y: w });
+      verts.push({ x: -h, y: -w });
+      verts.push({ x: -w, y: -w });
+      break;
+
+    case 'heart': {
+      const s = size * 0.85;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = (i / numPoints) * Math.PI * 2;
+        const x = s * (16 * Math.pow(Math.sin(t), 3)) / 16;
+        const y = -s * (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)) / 16;
+        verts.push({ x, y });
+      }
+      break;
+    }
+
+    case 'moon': {
+      // Crescent: outer circle minus inner circle offset
+      for (let i = 0; i < numPoints; i++) {
+        const a = (i / numPoints) * Math.PI * 2;
+        if (a < Math.PI * 0.8 || a > Math.PI * 1.2) {
+          verts.push({ x: Math.cos(a) * size, y: Math.sin(a) * size });
+        }
+      }
+      for (let i = numPoints - 1; i >= 0; i--) {
+        const a = (i / numPoints) * Math.PI * 2;
+        if (a >= Math.PI * 0.6 && a <= Math.PI * 1.4) {
+          verts.push({ x: Math.cos(a) * size * 0.7 + size * 0.25, y: Math.sin(a) * size * 0.7 });
+        }
+      }
+      break;
+    }
+
+    case 'flower': {
+      const petals = 6;
+      for (let i = 0; i < numPoints * 2; i++) {
+        const a = (i / (numPoints * 2)) * Math.PI * 2;
+        const r2 = size * (0.5 + 0.5 * Math.cos(petsals * a));
+        verts.push({ x: Math.cos(a) * r2, y: Math.sin(a) * r2 });
+      }
+      break;
+    }
+
+    case 'star5':
+    case 'star6':
+    case 'star8': {
+      const spikes = type === 'star5' ? 5 : type === 'star6' ? 6 : 8;
+      for (let i = 0; i < spikes * 2; i++) {
+        const a = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
+        const r2 = i % 2 === 0 ? size : size * 0.45;
+        verts.push({ x: Math.cos(a) * r2, y: Math.sin(a) * r2 });
+      }
+      break;
+    }
+
+    case 'hexagon':
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+        verts.push({ x: Math.cos(a) * size, y: Math.sin(a) * size });
+      }
+      break;
+  }
+
+  return verts;
+}
+
+// ==================== BUILD ====================
+function build() {
+  if (shadeMesh) { scene.remove(shadeMesh); shadeMesh.geometry.dispose(); }
+  if (shadeWireframe) { scene.remove(shadeWireframe); shadeWireframe.geometry.dispose(); }
+
+  const radii = getProfileRadii();
+  const height = S.height;
+  const segs = S.segments;
+  const wallT = S.wallThickness;
+  const topOpen = S.topOpening;
+  const holeSize = S.holeSize;
+  const layers = radii.length;
+  const layerH = height / (layers - 1);
+
+  const pos = [], norm = [], idx = [];
+
+  const outerPts = [], innerPts = [];
+  for (let i = 0; i < layers; i++) {
+    const r = radii[i];
+    outerPts.push({ y: layerH * i, r });
+    innerPts.push({ y: layerH * i, r: Math.max(r - wallT, 0.5) });
+  }
+
+  function addWall(pts, invert) {
+    const start = pos.length / 3;
+    for (let i = 0; i < layers; i++) {
+      for (let j = 0; j <= segs; j++) {
+        const a = (j / segs) * Math.PI * 2;
+        const r = pts[i].r;
+        pos.push(Math.cos(a) * r, pts[i].y, Math.sin(a) * r);
+        const n = invert ? -1 : 1;
+        norm.push(Math.cos(a) * n, 0, Math.sin(a) * n);
+      }
+    }
+    for (let i = 0; i < layers - 1; i++) {
+      for (let j = 0; j < segs; j++) {
+        const a = start + i * (segs + 1) + j;
+        const b = a + 1;
+        const c = start + (i + 1) * (segs + 1) + j;
+        const d = c + 1;
+        if (invert) { idx.push(a, c, b); idx.push(b, c, d); }
+        else { idx.push(a, b, c); idx.push(b, d, c); }
+      }
+    }
+  }
+
+  addWall(outerPts, false);
+  addWall(innerPts, true);
+
+  // Top cap
+  const topOuterR = radii[0];
+  const topInnerR = Math.max(topOpen, topOuterR - wallT);
+  if (S.flatTop || topOuterR > topInnerR + 0.5) {
+    const capIdx = pos.length / 3;
+    for (let j = 0; j <= segs; j++) {
+      const a = (j / segs) * Math.PI * 2;
+      pos.push(Math.cos(a) * topOuterR, height, Math.sin(a) * topOuterR);
+      norm.push(0, 1, 0);
+      pos.push(Math.cos(a) * topInnerR, height, Math.sin(a) * topInnerR);
+      norm.push(0, 1, 0);
+    }
+    for (let j = 0; j < segs; j++) {
+      const a = capIdx + j * 2, b = a + 1, c = capIdx + (j + 1) * 2, d = c + 1;
+      idx.push(a, c, b); idx.push(b, c, d);
+    }
+  }
+
+  // Bottom
+  if (!S.openBottom) {
+    const botIdx = pos.length / 3;
+    const botR = radii[layers - 1];
+    const botInnerR = Math.max(botR - wallT, 0.5);
+    for (let j = 0; j <= segs; j++) {
+      const a = (j / segs) * Math.PI * 2;
+      pos.push(Math.cos(a) * botR, 0, Math.sin(a) * botR);
+      norm.push(0, -1, 0);
+      pos.push(Math.cos(a) * botInnerR, 0, Math.sin(a) * botInnerR);
+      norm.push(0, -1, 0);
+    }
+    for (let j = 0; j < segs; j++) {
+      const a = botIdx + j * 2, b = a + 1, c = botIdx + (j + 1) * 2, d = c + 1;
+      idx.push(a, b, c); idx.push(b, d, c);
+    }
+  }
+
+  // Bottom rim
+  if (S.bottomRim && !S.openBottom) {
+    const rimH = 8, rimW = 4;
+    const botR = radii[layers - 1];
+    const rOuter = botR + rimW;
+    const rInner = Math.max(botR - wallT - rimW, 1);
+    const rimIdx = pos.length / 3;
+    for (let j = 0; j <= segs; j++) {
+      const a = (j / segs) * Math.PI * 2;
+      pos.push(Math.cos(a) * rOuter, -rimH, Math.sin(a) * rOuter); norm.push(0, -1, 0);
+      pos.push(Math.cos(a) * rOuter, 0, Math.sin(a) * rOuter); norm.push(0, -1, 0);
+      pos.push(Math.cos(a) * rInner, 0, Math.sin(a) * rInner); norm.push(0, -1, 0);
+      pos.push(Math.cos(a) * rInner, -rimH, Math.sin(a) * rInner); norm.push(0, -1, 0);
+    }
+    for (let j = 0; j < segs; j++) {
+      const a = rimIdx + j * 4, b = a + 1, c = a + 2, d = a + 3;
+      const e = rimIdx + (j + 1) * 4, f = e + 1, g = e + 2, h = e + 3;
+      idx.push(a, b, e); idx.push(b, f, e);
+      idx.push(b, c, f); idx.push(c, g, f);
+      idx.push(c, d, g); idx.push(d, h, g);
+      idx.push(d, a, h); idx.push(a, e, h);
+    }
+  }
+
+  // HOLE CUTOUTS
+  const holes = computeHolePoints();
+  const wallIdxStart = 0; // all outer wall triangles
+  const outerWallTriCount = (layers - 1) * segs;
+
+  // For each hole, remove nearby triangles and add hole wall + caps
+  let holePositions = [...pos];
+  let holeNormals = [...norm];
+  let holeIndices = [...idx];
+
+  for (const hole of holes) {
+    // Find triangles on outer wall near this hole
+    const holeRadius = hole.size * 1.8;
+    const triStart = wallIdxStart;
+    const triEnd = triStart + outerWallTriCount * 3;
+
+    // Remove triangles where all 3 vertices are near the hole
+    const finalIndices = [];
+    for (let t = 0; t < holeIndices.length / 3; t++) {
+      const i0 = holeIndices[t * 3];
+      const i1 = holeIndices[t * 3 + 1];
+      const i2 = holeIndices[t * 3 + 2];
+
+      const p0y = holePositions[i0 * 3 + 1];
+      const p1y = holePositions[i1 * 3 + 1];
+      const p2y = holePositions[i2 * 3 + 1];
+
+      // Only check outer wall triangles (y > 0 and y < height)
+      if (p0y > 0 && p0y < height && p1y > 0 && p1y < height && p2y > 0 && p2y < height) {
+        const p0x = holePositions[i0 * 3], p0z = holePositions[i0 * 3 + 2];
+        const p1x = holePositions[i1 * 3], p1z = holePositions[i1 * 3 + 2];
+        const p2x = holePositions[i2 * 3], p2z = holePositions[i2 * 3 + 2];
+
+        const d0 = Math.sqrt((p0x - hole.x) ** 2 + (p0z - hole.z) ** 2);
+        const d1 = Math.sqrt((p1x - hole.x) ** 2 + (p1z - hole.z) ** 2);
+        const d2 = Math.sqrt((p2x - hole.x) ** 2 + (p2z - hole.z) ** 2);
+
+        if (d0 < holeRadius && d1 < holeRadius && d2 < holeRadius) {
+          continue; // skip this triangle
+        }
+      }
+      finalIndices.push(i0, i1, i2);
+    }
+    holeIndices = finalIndices;
+
+    // Add hole ring (cylinder through wall)
+    const holeVerts = getHoleVertices(hole.type, hole.size, 24);
+    const nv = holeVerts.length;
+    const ringStart = holePositions.length / 3;
+
+    for (let v = 0; v < nv; v++) {
+      const hv = holeVerts[v];
+      // Outer edge
+      const ox = hole.x + hv.x * (hole.r / Math.max(hole.r, 0.01));
+      const oz = hole.z + hv.y * (hole.r / Math.max(hole.r, 0.01));
+      // We need to project the hole shape onto the curved surface
+      // Simpler: place vertices along the wall normal plane
+      const cosA = hole.x / hole.r;
+      const sinA = hole.z / hole.r;
+
+      // Outer vertex
+      const outerX = hole.x + hv.x * cosA - hv.y * sinA;
+      const outerY = hole.y + hv.x * sinA * 0 + hv.y * 1;
+      const outerZ = hole.z + hv.x * sinA + hv.y * cosA;
+
+      holePositions.push(outerX, hole.y, outerZ);
+      const nLen = Math.sqrt(outerX ** 2 + outerZ ** 2);
+      holeNormals.push(outerX / nLen, 0, outerZ / nLen);
+
+      // Inner vertex
+      const innerR = Math.max(hole.r - S.wallThickness, 0.5);
+      const innerX = (hole.x / hole.r) * innerR + (hv.x / hole.r) * innerR * 0.1;
+      const innerZ = (hole.z / hole.r) * innerR + (hv.y / hole.r) * innerR * 0.1;
+      holePositions.push(innerX, hole.y, innerZ);
+      holeNormals.push(-innerX / Math.max(Math.sqrt(innerX ** 2 + innerZ ** 2), 0.01), 0, -innerZ / Math.max(Math.sqrt(innerX ** 2 + innerZ ** 2), 0.01));
+    }
+
+    // Connect ring triangles
+    for (let v = 0; v < nv; v++) {
+      const a = ringStart + v * 2;
+      const b = a + 1;
+      const c = ringStart + ((v + 1) % nv) * 2;
+      const d = c + 1;
+      holeIndices.push(a, c, b);
+      holeIndices.push(b, c, d);
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(holePositions, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(holeNormals, 3));
+  geo.setIndex(holeIndices);
+  geo.computeVertexNormals();
+
+  shadeMesh = new THREE.Mesh(geo, shadeMaterial);
+  shadeMesh.castShadow = true;
+  shadeMesh.receiveShadow = true;
+  scene.add(shadeMesh);
+
+  const wireMat = new THREE.MeshBasicMaterial({
+    color: 0x7c5cfc, wireframe: true, transparent: true, opacity: 0.1
+  });
+  shadeWireframe = new THREE.Mesh(geo, wireMat);
+  shadeWireframe.visible = false;
+  scene.add(shadeWireframe);
+
+  pointLight.position.set(0, height * 0.6, 0);
+  updateInfo(holes.length);
+  document.getElementById('status-holes').textContent = `${holes.length} отверстий`;
+}
+
+function updateInfo(holeCount) {
+  const idx = shadeMesh ? shadeMesh.geometry.getIndex() : null;
+  const triCount = idx ? idx.count / 3 : 0;
+  const vol = (triCount * S.wallThickness * 0.01).toFixed(1);
+  const surf = (triCount * 0.5).toFixed(0);
+  const wPLA = (vol * 1.24).toFixed(1);
+  const pTime = Math.ceil(wPLA * 2);
+
+  document.getElementById('info-volume').textContent = `${vol} см³`;
+  document.getElementById('info-surface').textContent = `${surf} см²`;
+  document.getElementById('info-weight').textContent = `${wPLA} г`;
+  document.getElementById('info-time').textContent = `~${pTime} мин`;
+  document.getElementById('info-holes').textContent = holeCount || '—';
+  document.getElementById('info-support').textContent = S.openBottom ? 'Не нужны' : 'Возможны';
+}
+
+// ==================== PATTERN PREVIEW ====================
+function drawPatternCanvas() {
+  const canvas = document.getElementById('patternCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width, h = rect.height;
+
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, w, h);
+
+  const spacing = S.holeSpacing;
+  const size = S.holeSize;
+  const rows = Math.floor(h / (spacing * 0.8));
+  const cols = Math.floor(w / spacing);
+
+  ctx.fillStyle = '#e8e8f0';
+  ctx.strokeStyle = '#e8e8f0';
+  ctx.lineWidth = 1;
+
+  for (let row = 0; row < rows; row++) {
+    const y = row * spacing * 0.8 + 4;
+    const staggerOffset = (row % 2) * (spacing / 2) * (S.stagger / 100);
+
+    let density = 1;
+    if (S.gradientDensity) {
+      const centerRow = rows / 2;
+      const dist = Math.abs(row - centerRow) / centerRow;
+      density = 1 - dist * 0.5;
+    }
+
+    for (let col = 0; col < cols; col++) {
+      const x = col * spacing + staggerOffset + 4;
+      if (Math.random() > density) continue;
+
+      ctx.save();
+      ctx.translate(x, y);
+      drawHoleShape(ctx, S.holeType, size);
+      ctx.restore();
+    }
+  }
+
+  // Draw bands
+  for (const band of S.holeBands) {
+    const bandY = (band.position / 100) * h;
+    ctx.strokeStyle = '#7c5cfc';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(0, bandY - 6);
+    ctx.lineTo(w, bandY - 6);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, bandY + 6);
+    ctx.lineTo(w, bandY + 6);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  const typeNames = {
+    circle:'Круг', square:'Квадрат', diamond:'Ромб', star5:'Звезда 5', star6:'Звезда 6',
+    star8:'Звезда 8', hexagon:'Шестиугольник', cross:'Крест', heart:'Сердце',
+    moon:'Луна', flower:'Цветок', triangle:'Треугольник'
+  };
+  document.getElementById('patternInfoText').textContent =
+    `${typeNames[S.holeType]} · ${size}мм · шаг ${spacing}мм`;
+}
+
+function drawHoleShape(ctx, type, size) {
+  ctx.beginPath();
+  switch (type) {
+    case 'circle':
+      ctx.arc(0, 0, size, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case 'square':
+      ctx.fillRect(-size, -size, size * 2, size * 2);
+      break;
+    case 'diamond':
+      ctx.moveTo(0, -size); ctx.lineTo(size, 0); ctx.lineTo(0, size); ctx.lineTo(-size, 0);
+      ctx.closePath(); ctx.fill();
+      break;
+    case 'triangle':
+      ctx.moveTo(0, -size); ctx.lineTo(size * 0.87, size * 0.5); ctx.lineTo(-size * 0.87, size * 0.5);
+      ctx.closePath(); ctx.fill();
+      break;
+    case 'cross':
+      const w = size * 0.3;
+      ctx.moveTo(-w, -size); ctx.lineTo(w, -size); ctx.lineTo(w, -w);
+      ctx.lineTo(size, -w); ctx.lineTo(size, w); ctx.lineTo(w, w);
+      ctx.lineTo(w, size); ctx.lineTo(-w, size); ctx.lineTo(-w, w);
+      ctx.lineTo(-size, w); ctx.lineTo(-size, -w); ctx.lineTo(-w, -w);
+      ctx.closePath(); ctx.fill();
+      break;
+    case 'heart':
+      const s = size * 0.85;
+      for (let i = 0; i <= 40; i++) {
+        const t = (i / 40) * Math.PI * 2;
+        const x = s * (16 * Math.pow(Math.sin(t), 3)) / 16;
+        const y = -s * (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)) / 16;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.closePath(); ctx.fill();
+      break;
+    case 'moon':
+      ctx.arc(0, 0, size, 0.2 * Math.PI, 1.8 * Math.PI, false);
+      ctx.arc(size * 0.3, 0, size * 0.7, 1.8 * Math.PI, 0.2 * Math.PI, true);
+      ctx.closePath(); ctx.fill();
+      break;
+    case 'flower':
+      const petals = 6;
+      for (let i = 0; i <= 48; i++) {
+        const a = (i / 48) * Math.PI * 2;
+        const r2 = size * (0.5 + 0.5 * Math.cos(petals * a));
+        i === 0 ? ctx.moveTo(Math.cos(a) * r2, Math.sin(a) * r2) : ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+      }
+      ctx.closePath(); ctx.fill();
+      break;
+    case 'star5': drawStar(ctx, 5, size, size * 0.45); ctx.fill(); break;
+    case 'star6': drawStar(ctx, 6, size, size * 0.45); ctx.fill(); break;
+    case 'star8': drawStar(ctx, 8, size, size * 0.45); ctx.fill(); break;
+    case 'hexagon':
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+        i === 0 ? ctx.moveTo(Math.cos(a) * size, Math.sin(a) * size) : ctx.lineTo(Math.cos(a) * size, Math.sin(a) * size);
+      }
+      ctx.closePath(); ctx.fill();
+      break;
+  }
+}
+
+function drawStar(ctx, spikes, outerR, innerR) {
+  let rot = Math.PI / 2 * 3;
+  const step = Math.PI / spikes;
+  ctx.moveTo(0, -outerR);
+  for (let i = 0; i < spikes; i++) {
+    ctx.lineTo(Math.cos(rot) * outerR, Math.sin(rot) * outerR);
+    rot += step;
+    ctx.lineTo(Math.cos(rot) * innerR, Math.sin(rot) * innerR);
+    rot += step;
+  }
+  ctx.closePath();
+}
+
+// ==================== PROFILE CANVAS ====================
+function drawProfileCanvas() {
+  const canvas = document.getElementById('profileCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width, h = rect.height, p = 8;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = 'rgba(42,42,64,0.5)'; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = p + (h - 2 * p) * (i / 4);
+    ctx.beginPath(); ctx.moveTo(p, y); ctx.lineTo(w - p, y); ctx.stroke();
+  }
+
+  const radii = getProfileRadii();
+  const maxR = Math.max(...radii, 10);
+  const pts = [];
+  for (let i = 0; i < radii.length; i++) {
+    pts.push({
+      x: p + (w - 2 * p) * (i / (radii.length - 1)),
+      y: p + (h - 2 * p) * (1 - radii[i] / maxR)
+    });
+  }
+
+  ctx.fillStyle = 'rgba(124, 92, 252, 0.15)';
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, h - p);
+  pts.forEach(pt => ctx.lineTo(pt.x, pt.y));
+  ctx.lineTo(pts[pts.length - 1].x, h - p);
+  ctx.closePath(); ctx.fill();
+
+  ctx.strokeStyle = '#7c5cfc'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  pts.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y));
+  ctx.stroke();
+
+  pts.forEach(pt => {
+    ctx.fillStyle = '#7c5cfc'; ctx.beginPath(); ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(pt.x, pt.y, 2, 0, Math.PI * 2); ctx.fill();
+  });
+
+  ctx.fillStyle = '#555570'; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+  for (let i = 0; i < radii.length; i++) {
+    const x = p + (w - 2 * p) * (i / (radii.length - 1));
+    ctx.fillText(`${radii[i]}`, x, h - 1);
+  }
+}
+
+function renderProfileInputs() {
+  const container = document.getElementById('profilePointsContainer');
+  container.innerHTML = '';
+  const labels = S.profile.map((_, i) => {
+    if (i === 0) return 'Верх';
+    if (i === S.profile.length - 1) return 'Низ';
+    return `${Math.round(i / (S.profile.length - 1) * 100)}%`;
+  });
+
+  S.profile.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = 'profile-point';
+    div.innerHTML = `<label>${labels[i]}</label><input type="number" value="${Math.round(r)}" min="5" max="200" data-idx="${i}">`;
+    container.appendChild(div);
+  });
+
+  container.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', function() {
+      const idx = parseInt(this.dataset.idx);
+      const val = parseFloat(this.value);
+      if (!isNaN(val) && val > 0) {
+        S.profile[idx] = val;
+        if (S.preset === 'custom') { build(); drawProfileCanvas(); }
+        syncSliders();
+      }
+    });
+  });
+}
+
+function syncSliders() {
+  if (S.profile.length >= 2) {
+    S.topRadius = S.profile[0];
+    S.bottomRadius = S.profile[S.profile.length - 1];
+    document.getElementById('slider-topRadius').value = S.topRadius;
+    document.getElementById('val-topRadius').textContent = Math.round(S.topRadius);
+    document.getElementById('slider-bottomRadius').value = S.bottomRadius;
+    document.getElementById('val-bottomRadius').textContent = Math.round(S.bottomRadius);
+  }
+}
+
+// ==================== HOLE BANDS ====================
+function renderHoleBands() {
+  const container = document.getElementById('holeBandsContainer');
+  container.innerHTML = '';
+
+  S.holeBands.forEach((band, idx) => {
+    const div = document.createElement('div');
+    div.className = 'hole-band';
+    div.innerHTML = `
+      <div class="band-header">
+        <span class="band-title">Полоса ${idx + 1} — ${band.position}%</span>
+        <button class="band-remove" onclick="App.removeHoleBand(${idx})">✕</button>
+      </div>
+      <div class="control-group">
+        <div class="control-label"><span>Позиция (%)</span><span class="control-value">${band.position}</span></div>
+        <input type="range" min="0" max="100" value="${band.position}" step="5"
+          oninput="App.updateBand(${idx}, 'position', this.value)">
+      </div>
+      <div class="control-group">
+        <div class="section-label">Тип узора</div>
+        <div class="band-pattern-select">
+          ${['circle','square','diamond','star5','star6','star8','hexagon','cross','heart','moon','flower','triangle'].map(t => {
+            const icons = {circle:'⭕',square:'⬜',diamond:'🔷',star5:'⭐',star6:'✡',star8:'✦',hexagon:'⬡',cross:'✚',heart:'♥',moon:'🌙',flower:'✿',triangle:'△'};
+            return `<button class="band-pattern-btn ${band.type === t ? 'active' : ''}"
+              onclick="App.updateBand(${idx}, 'type', '${t}')">${icons[t]}</button>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control-label"><span>Размер</span><span class="control-value">${band.size}</span></div>
+        <input type="range" min="2" max="10" value="${band.size}" step="0.5"
+          oninput="App.updateBand(${idx}, 'size', this.value)">
+      </div>
+      <div class="control-group">
+        <div class="control-label"><span>Плотность</span><span class="control-value">${band.density}%</span></div>
+        <input type="range" min="5" max="80" value="${band.density}" step="5"
+          oninput="App.updateBand(${idx}, 'density', this.value)">
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// ==================== EXPORT ====================
+function exportToSTL() {
+  if (!shadeMesh) return null;
+  const geo = shadeMesh.geometry;
+  const pos = geo.getAttribute('position');
+  const norm = geo.getAttribute('normal');
+  const idx = geo.getIndex();
+  const data = [];
+  for (let i = 0; i < idx.count; i += 3) {
+    const i1 = idx.getX(i), i2 = idx.getX(i + 1), i3 = idx.getX(i + 2);
+    data.push(
+      norm.getX(i1), norm.getY(i1), norm.getZ(i1),
+      pos.getX(i1), pos.getY(i1), pos.getZ(i1),
+      pos.getX(i2), pos.getY(i2), pos.getZ(i2),
+      pos.getX(i3), pos.getY(i3), pos.getZ(i3)
+    );
+  }
+  const triCount = data.length / 12;
+  const buf = new ArrayBuffer(84 + triCount * 50);
+  const view = new DataView(buf);
+  const header = "LampShade Studio";
+  for (let i = 0; i < 80; i++) view.setUint8(i, i < header.length ? header.charCodeAt(i) : 0);
+  view.setUint32(80, triCount, true);
+  let off = 84;
+  for (let i = 0; i < data.length; i += 12) {
+    for (let j = 0; j < 12; j++) { view.setFloat32(off, data[i + j], true); off += 4; }
+    view.setUint16(off, 0, true); off += 2;
+  }
+  return buf;
+}
+
+function exportToOBJ() {
+  if (!shadeMesh) return null;
+  const geo = shadeMesh.geometry;
+  const pos = geo.getAttribute('position');
+  const norm = geo.getAttribute('normal');
+  const idx = geo.getIndex();
+  let obj = "# LampShade Studio\n";
+  for (let i = 0; i < pos.count; i++)
+    obj += `v ${pos.getX(i).toFixed(4)} ${pos.getY(i).toFixed(4)} ${pos.getZ(i).toFixed(4)}\n`;
+  for (let i = 0; i < norm.count; i++)
+    obj += `vn ${norm.getX(i).toFixed(4)} ${norm.getY(i).toFixed(4)} ${norm.getZ(i).toFixed(4)}\n`;
+  obj += '\n';
+  for (let i = 0; i < idx.count; i += 3) {
+    const a = idx.getX(i) + 1, b = idx.getX(i + 1) + 1, c = idx.getX(i + 2) + 1;
+    obj += `f ${a}//${a} ${b}//${b} ${c}//${c}\n`;
+  }
+  return obj;
+}
+
+// ==================== UI ====================
+function showNotification(text) {
+  const el = document.getElementById('notification');
+  document.getElementById('notification-text').textContent = text;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function syncAll() {
+  const sliders = ['height','topRadius','bottomRadius','midRadius','segments',
+    'wallThickness','topOpening','holeSize','holeSpacing','zoneTop','zoneBottom','stagger'];
+  sliders.forEach(key => {
+    const slider = document.getElementById(`slider-${key}`);
+    const val = document.getElementById(`val-${key}`);
+    if (slider) slider.value = S[key];
+    if (val) {
+      const v = S[key];
+      val.textContent = ['wallThickness','holeSize','holeSpacing'].includes(key) ? v.toFixed(1) : v;
+    }
+  });
+
+  ['openBottom','flatTop','bottomRim','showGrid','showAxis','gradientDensity'].forEach(key => {
+    const el = document.querySelector(`[onclick*="${key}"]`);
+    if (el) {
+      if (S[key]) { el.classList.add('checked'); el.querySelector('.custom-checkbox').textContent = '✓'; }
+      else { el.classList.remove('checked'); el.querySelector('.custom-checkbox').textContent = ''; }
+    }
+  });
+
+  // Presets
+  document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+  const ac = document.querySelector(`.preset-card[onclick*="${S.preset}"]`);
+  if (ac) ac.classList.add('active');
+
+  // Hole type
+  document.querySelectorAll('.pattern-card').forEach(c => c.classList.remove('active'));
+  const hc = document.querySelector(`.pattern-card[onclick*="'${S.holeType}'"]`);
+  if (hc) hc.classList.add('active');
+
+  // Material
+  document.querySelectorAll('.material-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('mat-pla')?.classList.add('active');
+
+  const names = { cylinder:'Цилиндр', tapered:'Конус', dome:'Полусфера', drum:'Барабан',
+    bell:'Колокол', empire:'Империя', coolie:'Кули', custom:'Своя форма' };
+  document.getElementById('status-shape').textContent = names[S.preset];
+  document.getElementById('status-dimensions').textContent =
+    `${S.height} × ${Math.round(S.topRadius)} × ${Math.round(S.bottomRadius)} мм`;
+  document.getElementById('group-midRadius').style.display =
+    (S.preset === 'empire' || S.preset === 'bell') ? 'block' : 'none';
+
+  renderProfileInputs();
+  drawProfileCanvas();
+  drawPatternCanvas();
+  renderHoleBands();
+}
+
+// ==================== APP ====================
+window.App = {
+  selectPreset(preset, el) {
+    saveState();
+    S.preset = preset;
+    document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const names = { cylinder:'Цилиндр', tapered:'Конус', dome:'Полусфера', drum:'Барабан',
+      bell:'Колокол', empire:'Империя', coolie:'Кули', custom:'Своя форма' };
+    document.getElementById('status-shape').textContent = names[preset];
+    document.getElementById('group-midRadius').style.display =
+      (preset === 'empire' || preset === 'bell') ? 'block' : 'none';
+    if (preset === 'custom') document.getElementById('panel-profile').classList.remove('collapsed');
+    S.profile = getProfileRadii();
+    renderProfileInputs(); drawProfileCanvas();
+    build();
+    showNotification(`Форма: ${names[preset]}`);
+  },
+
+  setHoleType(type, el) {
+    saveState();
+    S.holeType = type;
+    document.querySelectorAll('.pattern-card').forEach(c => c.classList.remove('active'));
+    if (el) el.classList.add('active');
+    drawPatternCanvas();
+    build();
+    const names = {circle:'Круг',square:'Квадрат',diamond:'Ромб',star5:'Звезда 5',star6:'Звезда 6',
+      star8:'Звезда 8',hexagon:'Шестиугольник',cross:'Крест',heart:'Сердце',moon:'Луна',
+      flower:'Цветок',triangle:'Треугольник'};
+    showNotification(`Узор: ${names[type]}`);
+  },
+
+  updateSlider(key, el) {
+    saveState();
+    const val = parseFloat(el.value);
+    S[key] = val;
+    const valEl = document.getElementById(`val-${key}`);
+    if (valEl) valEl.textContent = ['wallThickness','holeSize','holeSpacing'].includes(key) ? val.toFixed(1) : val;
+
+    if (['holeSize','holeSpacing','zoneTop','zoneBottom','stagger','gradientDensity','holeType'].includes(key)) {
+      drawPatternCanvas();
+    }
+    controls.target.set(0, S.height / 2, 0);
+    document.getElementById('status-dimensions').textContent =
+      `${S.height} × ${Math.round(S.topRadius)} × ${Math.round(S.bottomRadius)} мм`;
+    build();
+  },
+
+  toggleCheckbox(el, key) {
+    saveState();
+    el.classList.toggle('checked');
+    el.querySelector('.custom-checkbox').textContent = el.classList.contains('checked') ? '✓' : '';
+    S[key] = el.classList.contains('checked');
+    if (key === 'showGrid') gridHelper.visible = S.showGrid;
+    if (key === 'showAxis') axisHelper.visible = S.showAxis;
+    if (key === 'gradientDensity') drawPatternCanvas();
+    build();
+  },
+
+  setColor(color, el) {
+    S.color = color;
+    shadeMaterial.color.set(color);
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    if (el) el.classList.add('selected');
+  },
+
+  setDisplayMode(mode, btn) {
+    S.displayMode = mode;
+    document.querySelectorAll('.toggle-option').forEach(o => o.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    if (shadeMesh) {
+      switch (mode) {
+        case 'solid': shadeMesh.visible = true; shadeWireframe.visible = false; shadeMaterial.opacity = 0.85; break;
+        case 'wireframe': shadeMesh.visible = false; shadeWireframe.visible = true; break;
+        case 'both': shadeMesh.visible = true; shadeWireframe.visible = true; shadeMaterial.opacity = 0.5; break;
+      }
+    }
+  },
+
+  togglePanel(id) { document.getElementById(id).classList.toggle('collapsed'); },
+
+  resetCamera() {
+    camera.position.set(300, 250, 300);
+    controls.target.set(0, S.height / 2, 0);
+    controls.update();
+  },
+
+  fitToView() {
+    if (!shadeMesh) return;
+    const box = new THREE.Box3().setFromObject(shadeMesh);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = camera.fov * Math.PI / 180;
+    const dist = maxDim / (2 * Math.tan(fov / 2)) * 1.5;
+    camera.position.set(center.x + dist * 0.7, center.y + dist * 0.5, center.z + dist * 0.7);
+    controls.target.copy(center);
+    controls.update();
+    showNotification('Вписано');
+  },
+
+  toggleWireframe() {
+    if (S.displayMode === 'solid') this.setDisplayMode('wireframe', document.querySelectorAll('.toggle-option')[1]);
+    else this.setDisplayMode('solid', document.querySelectorAll('.toggle-option')[0]);
+  },
+
+  addHoleBand() {
+    saveState();
+    S.holeBands.push({ position: 50, type: 'star5', size: 4, density: 40 });
+    renderHoleBands();
+    build();
+    drawPatternCanvas();
+    showNotification('Полоса добавлена');
+  },
+
+  removeHoleBand(idx) {
+    saveState();
+    S.holeBands.splice(idx, 1);
+    renderHoleBands();
+    build();
+    drawPatternCanvas();
+    showNotification('Полоса удалена');
+  },
+
+  updateBand(idx, key, value) {
+    S.holeBands[idx][key] = key === 'type' ? value : parseFloat(value);
+    renderHoleBands();
+    build();
+    drawPatternCanvas();
+  },
+
+  applyMaterialPreset(mat, el) {
+    saveState();
+    document.querySelectorAll('.material-card').forEach(c => c.classList.remove('active'));
+    if (el) el.classList.add('active');
+    S.wallThickness = mat === 'pla' ? 1.2 : mat === 'petg' ? 1.0 : 1.5;
+    document.getElementById('slider-wallThickness').value = S.wallThickness;
+    document.getElementById('val-wallThickness').textContent = S.wallThickness.toFixed(1);
+    build();
+    showNotification(`Материал: ${mat.toUpperCase()}`);
+  },
+
+  addProfilePoint() {
+    if (S.profile.length >= 10) { showNotification('Максимум 10'); return; }
+    saveState();
+    const last = S.profile[S.profile.length - 1];
+    S.profile.splice(S.profile.length - 1, 0, Math.round(last * 0.9));
+    renderProfileInputs();
+    if (S.preset === 'custom') { build(); drawProfileCanvas(); }
+  },
+
+  removeProfilePoint() {
+    if (S.profile.length <= 2) { showNotification('Минимум 2'); return; }
+    saveState();
+    S.profile.splice(S.profile.length - 2, 1);
+    renderProfileInputs();
+    if (S.preset === 'custom') { build(); drawProfileCanvas(); }
+  },
+
+  saveProject() {
+    const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'lampshade.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showNotification('Сохранено');
+  },
+
+  loadProject() {
+    const input = document.getElementById('hiddenFileInput');
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          Object.assign(S, JSON.parse(ev.target.result));
+          syncAll(); build();
+          showNotification('Загружено');
+        } catch { showNotification('Ошибка'); }
+      };
+      reader.readAsText(file);
+      input.value = '';
+    };
+    input.click();
+  },
+
+  resetAll() {
+    saveState();
+    Object.assign(S, {
+      preset:'cylinder', height:200, topRadius:50, bottomRadius:100, midRadius:120,
+      segments:64, wallThickness:1.2, topOpening:30, openBottom:true, flatTop:false,
+      bottomRim:false, color:'#e8e8e8', displayMode:'solid', showGrid:true, showAxis:true,
+      profile:[50,75,100,90,80], holeType:'circle', holeSize:4, holeSpacing:10,
+      stagger:50, zoneTop:10, zoneBottom:90, gradientDensity:true, holeBands:[]
+    });
+    syncAll(); build(); this.resetCamera();
+    showNotification('Сброшено');
+  },
+
+  exportSTL() {
+    const buf = exportToSTL();
+    if (!buf) return;
+    const holes = computeHolePoints();
+    const blob = new Blob([buf], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'lampshade.stl';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    document.getElementById('modal-body').innerHTML = `
+      <strong>STL скачан! (${holes.length} отверстий)</strong><br><br>
+      Откройте в Cura, PrusaSlicer или OrcaSlicer.<br><br>
+      <strong>Рекомендации:</strong><br>
+      • Материал: PLA / PETG<br>
+      • Заполнение: 15-20%<br>
+      • Слой: 0.2 мм<br>
+      • Поддержки: ${S.openBottom ? 'не нужны' : 'возможны'}<br>
+      • Стенки: 2-3 периметра
+    `;
+    document.getElementById('modal-overlay').classList.add('show');
+  },
+
+  exportOBJ() {
+    const data = exportToOBJ();
+    if (!data) return;
+    const blob = new Blob([data], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'lampshade.obj';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showNotification('OBJ скачан!');
+  },
+
+  closeModal() { document.getElementById('modal-overlay').classList.remove('show'); },
+  undo, redo,
+};
+
+// ==================== SLIDER EVENTS ====================
+['height','topRadius','bottomRadius','midRadius','segments',
+ 'wallThickness','topOpening','holeSize','holeSpacing',
+ 'zoneTop','zoneBottom','stagger'].forEach(key => {
+  const slider = document.getElementById(`slider-${key}`);
+  if (slider) slider.addEventListener('input', function() { App.updateSlider(key, this); });
+});
+
+// ==================== KEYBOARD ====================
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 'z') { e.preventDefault(); App.undo(); }
+  if (e.ctrlKey && e.key === 'y') { e.preventDefault(); App.redo(); }
+});
+
+// ==================== RESIZE ====================
+function onResize() {
+  const w = viewport.clientWidth, h = viewport.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  drawProfileCanvas();
+  drawPatternCanvas();
+}
+window.addEventListener('resize', onResize);
+
+// ==================== ANIMATE ====================
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// ==================== INIT ====================
+saveState();
+build();
+renderProfileInputs();
+drawProfileCanvas();
+drawPatternCanvas();
+renderHoleBands();
+updateUndoRedo();
+setTimeout(() => { onResize(); App.fitToView(); }, 200);
+animate();
+
+</script>
+</body>
+</html>
+
 
