@@ -133,7 +133,6 @@
                 <button class="tab-btn active-tab flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all" data-tab="params">Параметры</button>
                 <button class="tab-btn flex-1 py-2 px-3 rounded-lg text-xs font-medium text-gray-400 bg-gray-800/50 transition-all" data-tab="patterns">Паттерны</button>
                 <button class="tab-btn flex-1 py-2 px-3 rounded-lg text-xs font-medium text-gray-400 bg-gray-800/50 transition-all" data-tab="presets">Пресеты</button>
-                <button class="tab-btn flex-1 py-2 px-3 rounded-lg text-xs font-medium text-gray-400 bg-gray-800/50 transition-all" data-tab="resources">Ресурсы</button>
             </div>
 
             <!-- Params Tab -->
@@ -422,85 +421,6 @@
                     </button>
                 </div>
             </div>
-
-            <!-- Resources Tab -->
-            <div id="tab-resources" class="px-4 pb-6 space-y-4 hidden">
-                <!-- Material settings -->
-                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Материал и настройки</label>
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-xs text-gray-500 mb-1 block">Материал</label>
-                        <select id="materialSelect" class="w-full bg-gray-800/80 border border-gray-700 rounded-lg px-3 py-2.5 text-sm focus:border-blue-500 outline-none transition-colors">
-                            <option value="pla">PLA (ρ = 1.24 г/см³)</option>
-                            <option value="abs">ABS (ρ = 1.04 г/см³)</option>
-                            <option value="petg">PETG (ρ = 1.27 г/см³)</option>
-                            <option value="tpu">TPU (ρ = 1.21 г/см³)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 mb-1 block">Диаметр филамента (мм)</label>
-                        <select id="filamentDiameter" class="w-full bg-gray-800/80 border border-gray-700 rounded-lg px-3 py-2.5 text-sm focus:border-blue-500 outline-none transition-colors">
-                            <option value="1.75">1.75 мм</option>
-                            <option value="2.85">2.85 мм</option>
-                        </select>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-xs text-gray-500">Цена за кг (₽)</span>
-                            <span id="priceVal" class="text-xs text-green-400 font-mono">1500</span>
-                        </div>
-                        <input type="range" id="pricePerKg" class="slider-track w-full" min="500" max="5000" value="1500" step="50">
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-xs text-gray-500">Высота слоя (мм)</span>
-                            <span id="layerHeightVal" class="text-xs text-green-400 font-mono">0.2</span>
-                        </div>
-                        <input type="range" id="layerHeight" class="slider-track w-full" min="0.1" max="0.4" value="0.2" step="0.05">
-                    </div>
-                </div>
-
-                <!-- Results -->
-                <div class="mt-4 p-4 rounded-xl bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700/50 space-y-3">
-                    <h4 class="text-xs font-semibold text-green-400 uppercase tracking-wider">📊 Расчёт ресурсов</h4>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="p-2 rounded-lg bg-gray-800/50">
-                            <span class="text-xs text-gray-500 block">Объём модели</span>
-                            <span id="resVolume" class="text-sm font-bold text-white font-mono">—</span>
-                        </div>
-                        <div class="p-2 rounded-lg bg-gray-800/50">
-                            <span class="text-xs text-gray-500 block">Вес</span>
-                            <span id="resWeight" class="text-sm font-bold text-white font-mono">—</span>
-                        </div>
-                        <div class="p-2 rounded-lg bg-gray-800/50">
-                            <span class="text-xs text-gray-500 block">Длина филамента</span>
-                            <span id="resLength" class="text-sm font-bold text-white font-mono">—</span>
-                        </div>
-                        <div class="p-2 rounded-lg bg-gray-800/50">
-                            <span class="text-xs text-gray-500 block">Стоимость</span>
-                            <span id="resCost" class="text-sm font-bold text-green-400 font-mono">—</span>
-                        </div>
-                        <div class="p-2 rounded-lg bg-gray-800/50">
-                            <span class="text-xs text-gray-500 block">Кол-во слоёв</span>
-                            <span id="resLayers" class="text-sm font-bold text-white font-mono">—</span>
-                        </div>
-                        <div class="p-2 rounded-lg bg-gray-800/50">
-                            <span class="text-xs text-gray-500 block">Время печати ~</span>
-                            <span id="resTime" class="text-sm font-bold text-white font-mono">—</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Solid volume fill factor -->
-                <div class="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
-                    <h4 class="text-xs font-semibold text-gray-400 mb-2">ℹ️ Коэффициент заполнения</h4>
-                    <p class="text-xs text-gray-500 leading-relaxed">
-                        Расчёт учитывает объём стенки (с учётом ячеек) × плотность материала.
-                        Коэффициент пустот зависит от паттерна и размера ячеек.
-                        Время печати рассчитано при скорости 40 мм/с.
-                    </p>
-                </div>
-            </div>
         </aside>
 
         <!-- 3D Viewport -->
@@ -602,14 +522,8 @@
             gridVisible: true,
             printViewMode: false,
             printProgress: 0,
-            printPlaying: false,
-            material: 'pla',
-            filamentDiameter: 1.75,
-            pricePerKg: 1500,
-            layerHeight: 0.2
+            printPlaying: false
         };
-
-        const materialDensity = { pla: 1.24, abs: 1.04, petg: 1.27, tpu: 1.21 };
 
         // Three.js setup
         const container = document.getElementById('viewport');
@@ -948,7 +862,6 @@
             lampshadeGroup.position.y = -H / 2;
 
             updateStats();
-            updateResources();
         }
 
         function addPatternRelief(patternType, radius, height, segs, lrs, cellSize, reliefDepth, vertices) {
@@ -1156,36 +1069,6 @@
             return totalSurfaceArea * t;
         }
 
-        function updateResources() {
-            const volumeCm3 = calculateVolume() / 1000;
-            const density = materialDensity[state.material];
-            const weight = volumeCm3 * density;
-            const filamentRadius = state.filamentDiameter / 2 / 10; // cm
-            const filamentCrossSection = Math.PI * filamentRadius * filamentRadius;
-            const lengthCm = volumeCm3 / filamentCrossSection;
-            const lengthM = lengthCm / 100;
-            const cost = weight / 1000 * state.pricePerKg;
-            const totalLayers = Math.ceil(state.height / state.layerHeight);
-            const avgSpeed = 40; // mm/s
-            const perimeterPerLayer = 2 * Math.PI * state.radius / 10; // cm
-            const totalTimeSec = (lengthCm / avgSpeed) * 1.5; // 1.5x for non-print moves
-            const timeHours = totalTimeSec / 3600;
-
-            document.getElementById('resVolume').textContent = volumeCm3.toFixed(1) + ' см³';
-            document.getElementById('resWeight').textContent = weight.toFixed(1) + ' г';
-            document.getElementById('resLength').textContent = lengthM.toFixed(1) + ' м';
-            document.getElementById('resCost').textContent = cost.toFixed(0) + ' ₽';
-            document.getElementById('resLayers').textContent = totalLayers;
-
-            if (timeHours > 1) {
-                const hrs = Math.floor(timeHours);
-                const mins = Math.round((timeHours - hrs) * 60);
-                document.getElementById('resTime').textContent = hrs + 'ч ' + mins + 'м';
-            } else {
-                document.getElementById('resTime').textContent = Math.round(timeHours * 60) + ' мин';
-            }
-        }
-
         // Presets
         const presets = {
             'modern-cylinder': { shape: 'cylinder', radius: 60, topRadius: 60, height: 120, thickness: 2, segments: 48, layers: 24, cellSize: 12, bridge: 2, baseHeight: 5, rimHeight: 5, pattern: 'honeycomb', relief: 1.5, twist: 0, waveAmp: 0 },
@@ -1231,12 +1114,6 @@
             document.getElementById('twistVal').textContent = state.twist;
             document.getElementById('waveAmp').value = state.waveAmp;
             document.getElementById('waveAmpVal').textContent = state.waveAmp;
-            document.getElementById('materialSelect').value = state.material;
-            document.getElementById('filamentDiameter').value = state.filamentDiameter;
-            document.getElementById('pricePerKg').value = state.pricePerKg;
-            document.getElementById('priceVal').textContent = state.pricePerKg;
-            document.getElementById('layerHeight').value = state.layerHeight;
-            document.getElementById('layerHeightVal').textContent = state.layerHeight;
 
             document.querySelectorAll('.pattern-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.pattern === state.pattern);
@@ -1261,28 +1138,6 @@
                     document.getElementById(valId).textContent = Number.isInteger(v) ? v : v.toFixed(1);
                     generateLampshade();
                 });
-            });
-
-            document.getElementById('materialSelect').addEventListener('change', (e) => {
-                state.material = e.target.value;
-                updateResources();
-            });
-
-            document.getElementById('filamentDiameter').addEventListener('change', (e) => {
-                state.filamentDiameter = parseFloat(e.target.value);
-                updateResources();
-            });
-
-            document.getElementById('pricePerKg').addEventListener('input', (e) => {
-                state.pricePerKg = parseInt(e.target.value);
-                document.getElementById('priceVal').textContent = state.pricePerKg;
-                updateResources();
-            });
-
-            document.getElementById('layerHeight').addEventListener('input', (e) => {
-                state.layerHeight = parseFloat(e.target.value);
-                document.getElementById('layerHeightVal').textContent = state.layerHeight.toFixed(2);
-                updateResources();
             });
 
             document.getElementById('shapeSelect').addEventListener('change', (e) => {
